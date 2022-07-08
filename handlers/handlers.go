@@ -25,9 +25,13 @@ func MiddlewareAuth(next http.Handler) http.Handler {
 }
 
 func HandleRequest() {
+	log.Println("Server Up and Running on Port 11000")
+
 	myRouter := mux.NewRouter().StrictSlash(true)
 
 	myRouter.HandleFunc("/", HomePage)
+	myRouter.Handle("/user/register", http.HandlerFunc(RegisterUser)).Methods("OPTIONS", "POST")
+	myRouter.Handle("/user/login", http.HandlerFunc(UserLogin)).Methods("OPTIONS", "POST")
 
 	handler := cors.AllowAll().Handler(myRouter)
 
