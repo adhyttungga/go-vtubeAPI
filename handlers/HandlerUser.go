@@ -12,10 +12,20 @@ import (
 )
 
 func RegisterUser(w http.ResponseWriter, r *http.Request) {
-	var payload structs.User
+	var payload, dbuser structs.User
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := connection.DB.Model(&structs.User{}).Where("email =?", payload.Email).Find(&dbuser).Error; err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	
+	if dbuser.Id != 0 {
+		json.NewEncoder(w).Encode(structs.Result{Code: 400, Message: "Your email already exist, please use other email!"})
 		return
 	}
 
@@ -26,12 +36,11 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(structs.Result{Code: 200, Message: "User Registration Successful!"})
+	json.NewEncoder(w).Encode(structs.Result{Code: 200, Message: "User registration successful!"})
 }
 
 func UserLogin(w http.ResponseWriter, r *http.Request) {
 	var payload, dbuser structs.User
-
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -43,10 +52,8 @@ func UserLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println(dbuser)
-
 	if dbuser.Id == 0 {
-		json.NewEncoder(w).Encode(structs.Result{Code: 400, Message: "Your Email Do Not Exist, Please Try Again!"})
+		json.NewEncoder(w).Encode(structs.Result{Code: 400, Message: "Your email do not exist, please try again!"})
 		return
 	}
 
@@ -55,7 +62,7 @@ func UserLogin(w http.ResponseWriter, r *http.Request) {
 
 	if err := bcrypt.CompareHashAndPassword(dbpass, payloadpass); err != nil {
 		log.Println(err)
-		json.NewEncoder(w).Encode(structs.Result{Code: 400, Message: "Your Password is Invalid, Please Try Again!"})
+		json.NewEncoder(w).Encode(structs.Result{Code: 400, Message: "Your password invalid, please try again!"})
 		return
 	}
 
@@ -66,5 +73,5 @@ func UserLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(structs.Result{Code: 200, Data: []byte(`{"token":"`+jwtToken+`"}`), Message: "User Login Successful!"})
+	json.NewEncoder(w).Encode(structs.Result{Code: 200, Data: []byte(`{"token":"`+jwtToken+`"}`), Message: "User login successful!"})
 }
