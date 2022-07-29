@@ -1,6 +1,10 @@
 package structs
 
-import "time"
+import (
+	"time"
+
+	"github.com/dgrijalva/jwt-go"
+)
 
 type User struct {
 	Id          int      	`json:"-"`
@@ -16,3 +20,8 @@ type Result struct {
 	Data 		interface{} `json:"data"`
 	Message string			`json:"message"`
 }		
+
+type Claims struct {
+	Username string `json:"username"`
+	jwt.StandardClaims
+}

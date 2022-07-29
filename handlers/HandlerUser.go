@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/adhyttungga/go-vtubeAPI/connection"
 	"github.com/adhyttungga/go-vtubeAPI/helper"
@@ -65,13 +66,24 @@ func UserLogin(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(structs.Result{Code: 400, Message: "Your password invalid, please try again!"})
 		return
 	}
-
-	jwtToken, err := helper.GenerateJWT(); 
+	
+	expirationTime := time.Now().Add(5 * time.Minute)
+	jwtToken, err := helper.GenerateJWT(dbuser.Email, expirationTime); 
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	http.SetCookie(w, &http.Cookie{
+		Name: "token",
+		Value: jwtToken,
+		Expires: expirationTime,
+	})
+
 	json.NewEncoder(w).Encode(structs.Result{Code: 200, Data: []byte(`{"token":"`+jwtToken+`"}`), Message: "User login successful!"})
 }
+
+// func RefreshToken(w http.ResponseWriter, r *http.Request) {
+
+// }

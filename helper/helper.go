@@ -2,7 +2,9 @@ package helper
 
 import (
 	"log"
+	"time"
 
+	"github.com/adhyttungga/go-vtubeAPI/structs"
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -17,10 +19,16 @@ func GetHash(pwd []byte) string {
 	return string(hash)
 }
 
-func GenerateJWT() (string, error) {
+func GenerateJWT(username string, expirationTime time.Time) (string, error) {
 	var SECRET_KEY = []byte("my_secret_key")
-
-	token := jwt.New(jwt.SigningMethodHS256)
+	
+	claims := &structs.Claims{
+		Username: username,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expirationTime.Unix(),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(SECRET_KEY)
 
 	if err != nil {
