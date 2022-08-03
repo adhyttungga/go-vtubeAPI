@@ -12,7 +12,7 @@ type User struct {
 	Email       string    `json:"email" gorm:"size:100 unique"`
 	Password    string    `json:"password" gorm:"size:200"`
 	CreatedDate time.Time `json:"-" gorm:"type:timestamp;default:current_timestamp"`
-	UpdatedDate time.Time `json:"-" gorm:"type:timestamp null"`
+	UpdatedDate time.Time `json:"-" gorm:"type:timestamp"`
 }
 
 type Result struct {
@@ -25,3 +25,5 @@ type Claims struct {
 	Username string `json:"username"`
 	jwt.StandardClaims
 }
+
+type ContextKey string

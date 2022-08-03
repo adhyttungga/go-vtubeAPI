@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -12,7 +13,14 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func RegisterUser(w http.ResponseWriter, r *http.Request) {
+func UserWelcome(w http.ResponseWriter, r *http.Request) {
+	key := structs.ContextKey("props")
+	props, _ := r.Context().Value(key).(structs.Claims)
+
+	json.NewEncoder(w).Encode(structs.Result{Code: 200, Data: fmt.Sprintf("Welcome %s!", props.Username), Message:"User login Successful!"})
+}
+
+func UserRegister(w http.ResponseWriter, r *http.Request) {
 	var payload, dbuser structs.User
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -67,8 +75,7 @@ func UserLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	
-	expirationTime := time.Now().Add(5 * time.Minute)
-	jwtToken, err := helper.GenerateJWT(dbuser.Email, expirationTime); 
+	jwtToken, expireat, err := helper.GenerateJWT(dbuser.Email); 
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -78,12 +85,37 @@ func UserLogin(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name: "token",
 		Value: jwtToken,
-		Expires: expirationTime,
+		Expires: expireat,
 	})
 
-	json.NewEncoder(w).Encode(structs.Result{Code: 200, Data: []byte(`{"token":"`+jwtToken+`"}`), Message: "User login successful!"})
+	json.NewEncoder(w).Encode(structs.Result{Code: 200, Message: "User login successful!"})
 }
 
-// func RefreshToken(w http.ResponseWriter, r *http.Request) {
+func RefreshToken(w http.ResponseWriter, r *http.Request) {
+	key := structs.ContextKey("props")
+	props, _ := r.Context().Value(key).(structs.Claims)
+	
+	fmt.Println("Expire at: ", props.ExpiresAt)
+	fmt.Println("Duration = ", time.Until(time.Unix(props.ExpiresAt, 0)))
+	fmt.Println("30 second = ", 30 * time.Second)
 
-// }
+	if time.Until(time.Unix(props.ExpiresAt, 0)) > (12 *time.Hour - 5 * time.Minute) {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	jwtToken, expireat, err := helper.GenerateJWT(props.Username)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name: "token",
+		Value: jwtToken,
+		Expires: expireat,
+	})
+
+	json.NewEncoder(w).Encode(structs.Result{Code: 200, Message: "Refresh token successful!"})
+}
