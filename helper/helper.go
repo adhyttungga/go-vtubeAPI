@@ -19,9 +19,10 @@ func GetHash(pwd []byte) string {
 	return string(hash)
 }
 
-func GenerateJWT(username string, expirationTime time.Time) (string, error) {
+func GenerateJWT(username string) (string, time.Time, error) {
 	var SECRET_KEY = []byte("my_secret_key")
 	
+	expirationTime := time.Now().Add(6 * time.Hour)
 	claims := &structs.Claims{
 		Username: username,
 		StandardClaims: jwt.StandardClaims{
@@ -33,8 +34,8 @@ func GenerateJWT(username string, expirationTime time.Time) (string, error) {
 
 	if err != nil {
 		log.Println("Error in JWT Token Generator")
-		return "", err
+		return "", expirationTime,  err
 	}
 
-	return tokenString, nil
+	return tokenString, expirationTime, nil
 }
